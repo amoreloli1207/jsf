@@ -1,0 +1,9 @@
+{
+  "name": "com.demo.host",
+  "description": "Demo native messaging host (C# WinForm)",
+  "path": ".\\demo.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://kabjpbbinbahandbhgaecceckfmcojid/"
+  ]
+}

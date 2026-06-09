@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "demo extension",
+  "version": "1.0.0",
+  "description": "PoC：把 GAMNAPIF 页面的 postMessage 桥接到本地 C# native host (demo.exe)",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["file:///*GAMNAPIF.html", "*://*/*GAMNAPIF.html"],
+      "all_frames": true,
+      "run_at": "document_start",
+      "js": ["content_script.js"]
+    }
+  ],
+  "permissions": ["nativeMessaging"]
+}

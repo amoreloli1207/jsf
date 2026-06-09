@@ -1,0 +1,17 @@
+# .NET 编译产物
+bin/
+obj/
+
+# register-host.ps1 发布并复制到 native-host 的运行产物（可由脚本重新生成）
+native-host/demo.exe
+native-host/demo.pdb
+
+# IDE / 编辑器
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 系统
+Thumbs.db
+desktop.ini

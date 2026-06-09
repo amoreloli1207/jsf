@@ -1,0 +1,20 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Frameset//EN"
+  "http://www.w3.org/TR/html4/frameset.dtd">
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>javaroot</title>
+</head>
+<!-- 上下布局：上方 business.html，下方 viewerltdframe.html。
+     如需左右布局，把 rows 改为 cols 即可。 -->
+<frameset rows="60%,40%">
+  <frame name="business" title="business" src="business.html">
+  <!-- 第二个 frame 初始为空，点击 business 中的按钮后再加载 viewerltdframe.html -->
+  <frame name="viewerltdframe" title="viewerltdframe" src="about:blank">
+  <noframes>
+    <body>
+      <p>当前浏览器不支持 frameset。</p>
+    </body>
+  </noframes>
+</frameset>
+</html>
