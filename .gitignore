@@ -15,3 +15,6 @@ native-host/demo.pdb
 # 系统
 Thumbs.db
 desktop.ini
+
+# Serena MCP 工具运行时目录（含机器本地配置，属运行时产物）
+.serena/

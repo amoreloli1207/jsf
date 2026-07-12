@@ -15,3 +15,28 @@ function onLoadExtension() {
   window.postMessage(message, '*');
   console.log('[tdsviewerExtension] postMessage 已发送:', message);
 }
+
+var isAddEvent = false;
+function CurrentPageLeadToolExtension(viewername){
+  var sendForm = document.getElementById("sendFormCurrentPage");
+  if(sendForm == null){
+    sendForm = document.createElement("form");
+    sendForm.setAttribute("id","sendFormCurrentPage");
+    sendForm.setAttribute("method","POST");
+    document.body.appendChild(sendForm);
+  }
+  var viewerId = getParameterByName("viewerId");
+  var targetname = viewerId + "_ExtensionCurrentPage";
+  sendForm.target = targetname;
+  sendForm.action = "GAMNDUMMYEDGE.html";
+  window.open('', targetname, 'left=50000,top=50000,width=1,height=1,status=yes,location=no,resizable=yes');
+  sendForm.submit();
+  if(!isAddEvent){
+    isAddEvent = true;
+    window.addEventListener("message", function (event){
+      parent.ldtF.document.getElementByld("currentPage").value = event.data;
+      parent.ldtF.document.getElementByld("keyCode").value = viewername;
+      parent.ldtF.document.getElementByld("updCurrentPage").click();
+    });
+  }
+}

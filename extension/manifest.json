@@ -8,7 +8,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["file:///*GAMNAPIF.html", "*://*/*GAMNAPIF.html"],
+      "matches": [
+        "file:///*GAMNAPIF.html", "*://*/*GAMNAPIF.html",
+        "file:///*viewerltdframe.html", "*://*/*viewerltdframe.html"
+      ],
       "all_frames": true,
       "run_at": "document_start",
       "js": ["content_script.js"]

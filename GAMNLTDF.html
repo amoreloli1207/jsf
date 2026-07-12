@@ -4,9 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GAMNLTDF</title>
+  <script src="javaframe.js"></script>
+  <script src="tdsviewerApplet.js"></script>
 </head>
-<body>
-  <h1>GAMNLTDF.html</h1>
-  <p>占位内容（模拟 JSF 后端生成的静态内容）。</p>
+<body onload="onLoad(4);">
+  <form id="ldtform" name="ldtform" method="post" action="GAMNLTDF.html">
+    <input id="updCurrentPage" type="submit" name="updCurrentPage" value="updCurrentPage" style="display:none;">
+    <input type="hidden" id="currentPage" name="currentPage" value="">
+    <input type="hidden" id="keyCode" name="keyCode" value="">
+  </form> 
 </body>
 </html>

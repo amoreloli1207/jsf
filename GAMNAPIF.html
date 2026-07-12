@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GAMNAPIF</title>
+  <script src="javaframe.js"></script>
   <script src="tdsviewerApplet.js"></script>
   <script src="tdsviewerExtension.js"></script>
 </head>
-<body onload="onLoadExtension()">
-  <h1>GAMNAPIF.html</h1>
-  <p>占位内容（模拟 JSF 后端生成的静态内容）。</p>
+<body onload="onLoad(4);onLoadExtension();">
+  <form id="imgform" name="imgform" method="post" action="GAMNAPIF.html">
+    <input type="hidden" id="NAME1" name="param" value="帳票名その１">
+  </form> 
 </body>
 </html>

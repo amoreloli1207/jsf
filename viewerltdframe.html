@@ -3,17 +3,13 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>viewerltdframe</title>
+  <title>イメージビューア</title>
+  <!-- <script src="viewerMiddleware.js"></script> -->
 </head>
-<!-- 嵌套 frameset：三个 frame 上下排布。比例可自行调整，换左右把 rows 改为 cols。 -->
-<frameset rows="34%,33%,33%">
-  <frame name="GAMNLTDF" title="GAMNLTDF" src="GAMNLTDF.html">
-  <frame name="GAMNAPIF" title="GAMNAPIF" src="GAMNAPIF.html">
-  <frame name="extF" title="extF" src="extF.html">
-  <noframes>
-    <body>
-      <p>当前浏览器不支持 frameset。</p>
-    </body>
-  </noframes>
+<frameset name="fs" rows="100,*,*" border="0">
+  <frame name="ldtF" src="GAMNLTDF.html" scrolling="auto" tabindex="-1">
+  <frame name="imgF" src="GAMNAPIF.html" scrolling="auto" tabindex="-1">
+  <frame name="viewer1_Master_extF" title="extF" src="" scrolling="auto" tabindex="-1"/>
+  <hidden id="targetid" value="viewer1Master" />
 </frameset>
 </html>

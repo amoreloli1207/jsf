@@ -10,5 +10,26 @@
   <h1>business.html</h1>
   <p>业务页面占位（模拟 JSF 后端生成的静态内容）。</p>
   <input type="button" value="打开 Ltd 窗口" onclick="openLtdWindow()">
+  <input type="button" value="关闭 Ltd 窗口" onclick="shutdownLtd()">
+  <input id="copyPage1_dummy" 
+         name="copyPage1_dummy" 
+         type="button"
+         value="&#29694;&#22312;&#12506;&#12540;&#12472;1" 
+         class="style-button bgcol_action font_small"
+         style="height: 22px; left: 11px; top: 427px; position: absolute; text-align: center;width: 105px;z-index: 3;text-align:center;color:#000000;" 
+         submitBtnld="copyPage1"
+         onclick="CurrentPage('viewer1');disableButton(this);" 
+         backcolor="bgcol_action" 
+         onmouseout="buttonStyleChangeNegative(this)"
+         onmouseover="buttonStyleChangeActive(this)"
+         confirmflg="false" />
+    <input id="copyPage1" 
+           type="submit" 
+           name="copyPage1"
+           value="&#29694;&#22312;&#12506;&#12540;&#12472;1"
+           class="style-button bgcol_action font_small" 
+           style="height: 22px; left: 11px; top: 427px; position: absolute; text-align: center;width: 105px;z-index: 2;text-align:center;color:#000000;" 
+           tabindex="-1" 
+           scrollflg="scrollflg" />
 </body>
 </html>

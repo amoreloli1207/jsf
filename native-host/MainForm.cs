@@ -106,6 +106,14 @@ public class MainForm : Form
                 string json = Encoding.UTF8.GetString(payload);
                 AppendLog($"[收到 {len} 字节] {json}");
 
+                if (IsShutdownMessage(json))
+                {
+                    AppendLog("[shutdown] 收到关闭请求，宿主即将退出。");
+                    SendMessage(new { ok = true, shutdown = true });
+                    BeginInvoke(new Action(Close));
+                    break;
+                }
+
                 // 回送一个 ack（可选），同样的帧格式
                 SendMessage(new { ok = true, echo = json });
             }
@@ -126,6 +134,29 @@ public class MainForm : Form
             off += n;
         }
         return true;
+    }
+
+    // 判断是否为 shutdown 请求。消息结构（background 包装后）：
+    // { type:"fromPage", payload:{ from:"content_script", data:{ type:"shutdown", ... } } }
+    private static bool IsShutdownMessage(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("payload", out var payload)
+                && payload.TryGetProperty("data", out var data)
+                && data.TryGetProperty("type", out var type)
+                && type.ValueKind == JsonValueKind.String
+                && type.GetString() == "shutdown")
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // 解析失败按非 shutdown 处理
+        }
+        return false;
     }
 
     private void SendMessage(object obj)
