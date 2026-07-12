@@ -1,0 +1,9 @@
+services:
+  jsf12:
+    build: .
+    image: jsf12-demo:latest
+    container_name: jsf12-demo
+    ports:
+      - "8080:8080"   # 应用：http://localhost:8080/
+      - "8000:8000"   # JPDA 远程调试端口，供 IDE attach
+    restart: unless-stopped
