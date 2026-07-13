@@ -34,9 +34,9 @@ function CurrentPageLeadToolExtension(viewername){
   if(!isAddEvent){
     isAddEvent = true;
     window.addEventListener("message", function (event){
-      parent.ldtF.document.getElementByld("currentPage").value = event.data;
-      parent.ldtF.document.getElementByld("keyCode").value = viewername;
-      parent.ldtF.document.getElementByld("updCurrentPage").click();
+      parent.ldtF.document.getElementById("currentPage").value = event.data;
+      parent.ldtF.document.getElementById("keyCode").value = viewername;
+      parent.ldtF.document.getElementById("updCurrentPage").click();
     });
   }
 }

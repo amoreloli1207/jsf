@@ -34,19 +34,7 @@ function CurrentPage(viewername) {
     parent.javaframe.setWindowObject(viewername + "_Master", objwin);
   }
   if(objwin.ldtF != null) {
-    //LEADTOOL呼び出し画面が存在する場合
-    var tanmatu = "";
-    if (document. getElementByld("Tanmatu") != nulI && document.getElementByld("Tanmatu") != ""){
-      tanmatu = document.getElementByld("Tanmatu").value;
-    }
-    if (tanmatu.toUpperCase() == "JIKI2025ACECLIENT") {
-      objwin.imgF.CurrentPageLeadToolExtension(viewername);
-    }else{
-      var currentpage = objwin.imgF.CurrentPageLeadTool();
-      objwin.ldtF.document.getElementById("currentPage").value = currentpage;
-      objwin.ldtF.document.getElementById("keyCode").value = viewername;
-      objwin.ldtF.document.getElementById("updCurrentPage").click();
-    }
+    objwin.imgF.CurrentPageLeadToolExtension(viewername);
   }else if (objwin.imgF != null){
     //通常Web版アプレツ卜版起動時の場合
   }else{
@@ -57,8 +45,8 @@ function CurrentPage(viewername) {
 
 function disableButton(obj){
   setTimeout(function(){
-    var subimitId = obj.gtAttribute("submitBtnId");
-    var submitObj = document.getElementByld(subimitId);
+    var subimitId = obj.getAttribute("submitBtnId");
+    var submitObj = document.getElementById(subimitId);
     var comfirm = obj.getAttribute("confirmflg");
     if (comfirm == "true") {
     }
