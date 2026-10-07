@@ -4,8 +4,9 @@ using System.Text.Json;
 namespace DemoHost;
 
 // Demo native messaging host。
-// 由 Edge 通过 connectNative 启动，stdin/stdout 与扩展通信：
+// 由 LocalService 按需拉起（过渡期也兼容 Edge connectNative），stdin/stdout 通信：
 // 每条消息 = 4 字节小端长度前缀 + UTF-8 JSON。
+// 回包带回请求里的 id 供 LocalService 关联；主动推送发 {type:"event", event, data}（无 id）。
 // 注意：stdout 是协议通道，绝不能往里打日志——日志只进窗口里的文本框。
 public class MainForm : Form
 {
@@ -13,6 +14,15 @@ public class MainForm : Form
     private readonly CancellationTokenSource _cts = new();
     private Stream? _stdout;
     private readonly object _stdoutLock = new();
+    private int _pushSeq;
+
+    // 不序列化 null：扩展模式下请求无 id，回包里也就不出现 "id":null；
+    // 不把中文转义成 \uXXXX，便于日志阅读（stdout 是协议通道，不涉及 HTML）
+    private static readonly JsonSerializerOptions SendJsonOptions = new()
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     public MainForm()
     {
@@ -41,6 +51,20 @@ public class MainForm : Form
         };
         clearButton.Click += (_, _) => _log.Clear();
 
+        // 验证 exe → LocalService → 页面（SSE）主动推送链路
+        var pushButton = new Button
+        {
+            Text = "推送测试",
+            AutoSize = true,
+            Margin = new Padding(4)
+        };
+        pushButton.Click += (_, _) => PushEvent("testEvent", new
+        {
+            seq = Interlocked.Increment(ref _pushSeq),
+            text = "hello from demo.exe",
+            time = DateTime.Now.ToString("HH:mm:ss.fff")
+        });
+
         var toolbar = new FlowLayoutPanel
         {
             Dock = DockStyle.Fill,
@@ -49,6 +73,7 @@ public class MainForm : Form
             Padding = new Padding(2)
         };
         toolbar.Controls.Add(clearButton);
+        toolbar.Controls.Add(pushButton);
 
         // 用 TableLayoutPanel 保证布局确定：第 0 行放工具栏（自适应高度），第 1 行日志区填满
         var layout = new TableLayoutPanel
@@ -70,7 +95,7 @@ public class MainForm : Form
 
     private void StartReadLoop()
     {
-        AppendLog("Demo native host 启动，等待来自扩展的消息...");
+        AppendLog("Demo native host 启动，等待上游（LocalService / 扩展）的消息...");
         Task.Run(() => ReadLoop(_cts.Token));
     }
 
@@ -85,7 +110,7 @@ public class MainForm : Form
             {
                 if (!ReadExact(stdin, lenBuf, 4))
                 {
-                    AppendLog("[stdin] 到达流末尾（浏览器断开，或未由浏览器启动）。");
+                    AppendLog("[stdin] 到达流末尾（上游断开，或未由 LocalService / 浏览器启动）。");
                     break;
                 }
 
@@ -106,16 +131,18 @@ public class MainForm : Form
                 string json = Encoding.UTF8.GetString(payload);
                 AppendLog($"[收到 {len} 字节] {json}");
 
+                string? id = GetRequestId(json);
+
                 if (IsShutdownMessage(json))
                 {
                     AppendLog("[shutdown] 收到关闭请求，宿主即将退出。");
-                    SendMessage(new { ok = true, shutdown = true });
+                    SendMessage(new { id, ok = true, shutdown = true });
                     BeginInvoke(new Action(Close));
                     break;
                 }
 
                 // 回送一个 ack（可选），同样的帧格式
-                SendMessage(new { ok = true, echo = json });
+                SendMessage(new { id, ok = true, echo = json });
             }
         }
         catch (Exception ex)
@@ -136,8 +163,30 @@ public class MainForm : Form
         return true;
     }
 
-    // 判断是否为 shutdown 请求。消息结构（background 包装后）：
-    // { type:"fromPage", payload:{ from:"content_script", data:{ type:"shutdown", ... } } }
+    // 取请求的关联 id（LocalService 发来的消息带顶层 id；扩展发来的没有，返回 null）
+    private static string? GetRequestId(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String)
+                return id.GetString();
+        }
+        catch
+        {
+            // 解析失败按无 id 处理
+        }
+        return null;
+    }
+
+    // 主动推送事件。复用 SendMessage 的 _stdoutLock，保证不与回包帧交错
+    private void PushEvent(string eventName, object data)
+    {
+        SendMessage(new { type = "event", @event = eventName, data });
+    }
+
+    // 判断是否为 shutdown 请求。消息结构（LocalService / background 包装后）：
+    // { [id], type:"fromPage", payload:{ from:"webapi"|"content_script", data:{ type:"shutdown", ... } } }
     private static bool IsShutdownMessage(string json)
     {
         try
@@ -163,7 +212,7 @@ public class MainForm : Form
     {
         try
         {
-            string json = JsonSerializer.Serialize(obj);
+            string json = JsonSerializer.Serialize(obj, SendJsonOptions);
             byte[] payload = Encoding.UTF8.GetBytes(json);
             byte[] len = BitConverter.GetBytes(payload.Length); // 小端
 

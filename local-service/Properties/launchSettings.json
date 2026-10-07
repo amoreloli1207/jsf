@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "LocalService": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://127.0.0.1:17320",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Host__ExePath": "../../../../native-host/bin/Release/net10.0-windows/demo.exe"
+      }
+    }
+  }
+}

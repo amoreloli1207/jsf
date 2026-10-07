@@ -1,21 +1,22 @@
 // viewerMiddleware.js
 // 被 viewerltdframe.html 引用。business.html 的「关闭 Ltd 窗口」按钮经 javaframe.js 用 postMessage 触发本文件的 shutdown()。
-// shutdown 走与「打开」按钮大致相同的路线：window.postMessage → content_script → background → 通知 C# 关闭；
+// shutdown 经本地 LocalService 通知 C# 关闭（tdsHost 定义在 tdsviewerExtension.js，引用本文件的页面须先引入它）；
 // 同时把 javaroot 中的 viewerltdframe 帧恢复为空白（相当于关闭查看器）。
 function shutdown() {
   console.log('[viewerMiddleware] shutdown called');
 
-  // 1) 通知 C# 关闭。本函数运行在 viewerltdframe 帧内，postMessage 发到本帧 window，
-  //    由注入到本帧的 content_script.js 接收并转发给扩展 background，再发给 native host。
-  window.postMessage({
-    __tdsviewer: true,
-    type: 'shutdown',
+  // 1) 通知 C# 关闭：POST /api/host/shutdown，带 keepalive，下面的导航不会打断请求。
+  tdsHost.shutdown({
     from: 'viewerltdframe',
     text: 'shutdown request'
-  }, '*');
+  }).then(function (result) {
+    console.log('[viewerMiddleware] shutdown 回应:', result);
+  }).catch(function (err) {
+    console.error('[viewerMiddleware] shutdown 失败:', err);
+  });
 
   // 2) 关闭 javaroot 中的 viewerltdframe 帧（恢复为空白）。
-  //    稍作延迟，确保上面的消息先被 content_script 转发出去——本帧导航到 about:blank 会销毁当前文档。
+  //    keepalive 已保证请求发完；保留短延迟只是让上面的日志有机会输出。
   setTimeout(function () {
     parent.frames['viewerltdframe'].location.href = 'about:blank';
   }, 200);

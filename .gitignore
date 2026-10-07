@@ -18,3 +18,6 @@ desktop.ini
 
 # Serena MCP 工具运行时目录（含机器本地配置，属运行时产物）
 .serena/
+
+# local-service/publish.ps1 的发布产物（LocalService.exe + demo.exe，可由脚本重新生成）
+dist/

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- WinExe：登录自启时不弹控制台窗口；日志写文件（见 FileLogger.cs） -->
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>LocalService</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <!-- 非 IIS 托管，发布时不生成 web.config -->
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+  </PropertyGroup>
+
+</Project>

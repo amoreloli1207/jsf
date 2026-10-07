@@ -111,6 +111,7 @@ HTTP 是请求-响应模型，stdio 是一条共享流。LocalService 发给 exe
 - `GET /api/host/events` 用 .NET 10 内置的 `TypedResults.ServerSentEvents(IAsyncEnumerable<SseItem<T>>)` 输出，不需要手写 `text/event-stream` 格式。
 - SSE 的 `event:` 字段填帧里的 `event`（如 `currentPage`），`data:` 填帧里的 `data`（JSON）。页面用 `es.addEventListener('currentPage', ...)` 按事件名订阅。
 - **心跳**：每 15 秒发一条 SSE 注释行（`: ping`），防止连接被中间设备闲置断开，也能让服务端及时发现失效连接。
+  > 实施说明：`SseItem<T>` 不支持输出注释行，心跳实际以 **`ping` 事件**（`event: ping` / `data: {}`）发送，页面不订阅即自动忽略。另外订阅建立时先发一条 **`ready` 事件**，页面可据此确认 SSE 已连通。
 - exe 退出时广播一条 `hostExited` 事件，页面据此更新状态。exe 不在运行时没有事件源，这是预期行为，不需要缓存补发。PoC 不实现 `Last-Event-ID` 断点续传。
 
 **页面侧：每个页面只建一条 `EventSource`。**
@@ -218,6 +219,7 @@ Chromium（含 Edge）在逐步收紧「网页访问 localhost / 内网」：从
 - **单实例**：启动时获取命名 `Mutex`（`Local\JsfHandlerLocalService`），已有实例在运行则直接退出。这样可以避免手动启动和自启动同时运行，第二个进程抢端口失败。
 - **端口被占用**：Kestrel 绑定失败时记日志并退出码非 0，不静默挂起。
 - 用户注销时 LocalService 随会话结束，`demo.exe` 一并退出；LocalService 退出时主动结束自己拉起的 `demo.exe`，不留孤儿进程。
+  > 实施说明：正常停止时由 `HostProcessBridge.Dispose` 结束 `demo.exe`。但 LocalService 是无窗口的 WinExe，被 `taskkill /F` 或注销强制终止时不会执行清理，所以另外把 `demo.exe` 放进 **Windows Job Object（`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`）**：LocalService 无论以何种方式结束，内核都会连带结束 `demo.exe`（已实测 `taskkill /F`）。
 
 ## 6. 文件改动清单
 
@@ -229,8 +231,12 @@ Chromium（含 Edge）在逐步收紧「网页访问 localhost / 内网」：从
 | `Program.cs` | Minimal API：单实例 `Mutex`、注册 CORS / AllowedHosts / Origin 校验中间件、映射 §4 的接口、文件日志 |
 | `HostProcessBridge.cs` | 单例服务：按需 `Process.Start(demo.exe)`（重定向 stdin/stdout）；后台循环读 stdout 帧，按 §3.4 区分 reply / event；`id → TaskCompletionSource` 关联回包；监测进程退出；LocalService 停止时结束 `demo.exe` |
 | `HostEventHub.cs` | 单例：SSE 订阅者管理（每连接一个 `Channel<T>`）、事件广播、15 秒心跳 |
-| `appsettings.json` | `Urls`（`http://127.0.0.1:17320`）、`AllowedHosts`、`Cors:AllowedOrigins`（内网 JSF origin）、`Host:ExePath`、`Host:ReplyTimeoutMs` |
-| `appsettings.Development.json` | 开发期额外放行 `null`（`file://`）和 `http://localhost:8080`（`jsf12-env`） |
+| `ChildProcessJob.cs` | Job Object 封装，保证 LocalService 被强制结束时 `demo.exe` 一并结束（§5.5 实施说明） |
+| `FileLogger.cs` | 极简文件日志：`%LOCALAPPDATA%\JsfHandler\logs\localservice-yyyyMMdd.log` |
+| `appsettings.json` | `Urls`（`http://127.0.0.1:17320`）、`AllowedHosts`、`Cors:AllowedOrigins`（内网 JSF origin，**当前为占位 `http://jsf-server:8080`，需替换**）、`Host:ExePath`、`Host:ReplyTimeoutMs` |
+| `appsettings.Development.json` | 开发期额外放行 `null`（`file://`）和 `http://localhost:8080`（`jsf12-env`）。使用独立键 `Cors:DevAllowedOrigins`：配置数组按下标合并，与生产同键会互相覆盖 |
+| `Properties/launchSettings.json` | 仅 `dotnet run` 使用：开发环境 + `Host__ExePath` 指向 `native-host` 的 Release 编译输出 |
+| `publish.ps1` | 把 `LocalService.exe` 与 `demo.exe` 一起发布到仓库根的 `dist/`（已加入 `.gitignore`）。二者必须同目录，因为 `Host:ExePath` 默认 `demo.exe` |
 | `install-autostart.ps1` / `uninstall-autostart.ps1` | 写入/删除 `HKCU\...\Run` 下的 `JsfHandlerLocalService`（§5.5） |
 
 说明：用 Minimal API 而不是 Controller，因为 PoC 只有 3～4 个端点，Minimal API 更直观；后续端点多了再迁 Controller，两者都属于 ASP.NET Core WebAPI。
@@ -314,6 +320,8 @@ flowchart TD
 9. 验证通过后下线 `extension/` 与 Native Messaging 注册脚本，更新 README / CLAUDE.md；
 10. （后续）token 鉴权、`CurrentPageLeadToolExtension` 迁移到推送事件。
 
+> 实施进度（2026-10-08）：第 1～5 步代码已完成，并用 curl 验证了服务端链路：CORS / PNA 预检、非白名单 Origin 返回 403、非 JSON 返回 415、错误 Host 返回 400、消息往返与 `id` 关联、中文传输、`ready` / `hostExited` / `ping` 推送、shutdown、单实例、Job Object 连带结束。浏览器端（第 4 步 `keepalive`、第 5 步「推送测试」按钮→页面、第 6 步）和第 7、8 步待人工验证。
+>
 > ⚠️ 已废弃：原第 7 步「（可选）SSE 推送、登录自启、token 鉴权」。SSE 和登录自启已确认纳入第一阶段（第 5、8 步），token 移到第 10 步。
 
 ## 9. 待确认事项
